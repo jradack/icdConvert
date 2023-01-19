@@ -1,0 +1,50 @@
+---
+title: "icdConvert - How to Use the Package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{icdConvert - How to Use the Package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Installing icdConvert
+Install the package from github using the following command:
+```{r install, eval = FALSE}
+# devtools::install_github("")
+```
+
+```{r setup}
+library(icdConvert)
+```
+
+The following uses the example data set `example_data_icd9_pc`. This dataframe has the column `icd9_pc`, which conatins ICD-9 procedure codes.
+
+# Function demo
+Map ICD diagnosis or procedure codes to/from ICD9 or ICD10.
+```{r}
+map_code_test <- map_code(example_data_icd9_pc$icd9_pc, icdVer = 10, type = "pc")
+head(map_code_test, 25)
+```
+
+Get description of code
+```{r}
+get_description_test <- get_description(example_data_icd9_pc$icd9_pc, icdVer = 9, type = "pc")
+```
+
+Map codes and get description of the mapped codes
+```{r}
+map_describe_test <- map_describe(example_data_icd9_pc$icd9_pc, icdVer = 10, type = "pc")
+```
+
+
+
+
+
+

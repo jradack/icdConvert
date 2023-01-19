@@ -1,0 +1,19 @@
+Package: icdConvert
+Title: Convert ICD Codes
+Version: 0.0.0.9000
+Authors@R: 
+    person("Joshua", "Radack", , "radackj@chop.com", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Converts diagnosis and procedure codes between ICD-9 and ICD-10
+  with code descriptions included.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.1
+Depends: 
+    R (>= 2.10)
+LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
