@@ -8,15 +8,24 @@
 #' @return A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
 #'
 #' @export
-map_code <- function(codes, icdVer_dest, code_type){
-  # Load appropriate GEM file
-  gem <- switch(paste0(icdVer_dest, code_type), "9dg" = dg_10_9_gem, "10dg" = dg_9_10_gem, "9pc" = pc_10_9_gem, "10pc" = pc_9_10_gem)
-  if(is.null(gem)){
-    stop("Error: improper ICD version or code type, or GEM file currently unavailable")
+map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction = c("forward", "backward")){
+  code_type <- match.arg(code_type)
+  direction <- match.arg(direction)
+
+  if(direction == "forward"){
+    # Load appropriate GEM file
+    gem <- switch(paste0(icdVer_dest, code_type), "9dg" = dg_10_9_gem, "10dg" = dg_9_10_gem, "9pc" = pc_10_9_gem, "10pc" = pc_9_10_gem)
+    # Subset GEM file based on codes
+    matches <- subset(gem, src %in% codes)
+    colnames(matches)[1:2] <- c('src_code', 'dest_code')
+  } else if(direction == "backward"){
+    # Load appropriate GEM file
+    gem <- switch(paste0(icdVer_dest, code_type), "9dg" = dg_9_10_gem, "10dg" = dg_10_9_gem, "9pc" = pc_9_10_gem, "10pc" = pc_10_9_gem)
+    # Subset GEM file based on codes
+    matches <- subset(gem, dest %in% codes)
+    matches <- matches[,c('dest','src',colnames(matches)[3:8])]
   }
 
-  # Subset GEM file based on codes
-  matches <- subset(gem, src %in% codes)
   colnames(matches)[1:2] <- c('src_code', 'dest_code')
 
   # Clean up for cases where no matching code was found
@@ -28,32 +37,6 @@ map_code <- function(codes, icdVer_dest, code_type){
 
   return(matches)
 }
-
-#' Reverse Map
-#'
-#'
-reverse_map <- function(codes, icdVer_dest, code_type){
-  # Load appropriate GEM file
-  gem <- switch(paste0(icdVer_dest, code_type), "9dg" = dg_9_10_gem, "10dg" = dg_10_9_gem, "9pc" = pc_9_10_gem, "10pc" = pc_10_9_gem)
-  if(is.null(gem)){
-    stop("Error: improper ICD version or code type, or GEM file currently unavailable")
-  }
-
-  # Subset GEM file based on codes
-  matches <- subset(gem, dest %in% codes)
-  matches <- matches[,c('dest','src',colnames(matches)[3:8])]
-  colnames(matches)[1:2] <- c('src_code', 'dest_code')
-
-  # Clean up for cases where no matching code was found
-  matches <- merge(data.frame(src_code = codes), matches, by.x = "src_code", by.y = "src_code", all.x = TRUE)
-  matches$dest_code <- ifelse(is.na(matches$dest_code), "No matches found", matches$dest_code)
-
-  # Handling cases of a one to many map of the source code
-  matches <- matches[order(matches$src_code,matches$combination,matches$scenario,matches$choice_lists),]
-
-  return(matches)
-}
-
 
 #' Get Description
 #'
