@@ -14,35 +14,65 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Installing icdConvert
-Install the package from github using the following command:
+# Installing `icdConvert`
+The package can  be installed from github with the `devtools` package using the following command:
 ```{r install, eval = FALSE}
-# devtools::install_github("")
+devtools::install_github("https://github.com/jradack/icdConvert")
 ```
+You might get a warning about needing Rtools to build the package, but you should be able to ignore this.
 
+Then it can be loaded like any other R package:
 ```{r setup}
 library(icdConvert)
 ```
 
-The following uses the example data set `example_data_icd9_pc`. This dataframe has the column `icd9_pc`, which conatins ICD-9 procedure codes.
-
-# Function demo
-Map ICD diagnosis or procedure codes to/from ICD9 or ICD10.
-```{r}
-map_code_test <- map_code(example_data_icd9_pc$icd9_pc, icdVer = 10, type = "pc")
-head(map_code_test, 25)
+The package contains three primary functions(`map_code`, `get_description`, and `map_describe`) and a dataframe (`example_data_icd9_pc`).
+The example dataframe has the character column `icd9_pc`, which is a list of ICD-9 procedure codes.
+This vignette will demo these primary functions using `example_data_icd9_pc`.
+```{r echo = FALSE, results='asis'}
+knitr::kable(example_data_icd9_pc[1:10,])
 ```
 
-Get description of code
+# Function demos
+## `map_code`
+This function takes a vector or ICD codes and converts them to the corresponding ICD version.
+The user must specify the destination ICD version (i.e. which ICD version they want to convert the codes to) and the type of code being converted (`"dg"` for diagnosis codes, `"pc"` for procedure codes).
+This package handles one-to-many mappings of codes.
+When no match can be found, the returned destination code is the string `"No matches found"`.
 ```{r}
-get_description_test <- get_description(example_data_icd9_pc$icd9_pc, icdVer = 9, type = "pc")
+map_code_test <- map_code(example_data_icd9_pc$icd9_pc, icdVer_dest = 10, code_type = "pc")
 ```
 
-Map codes and get description of the mapped codes
+```{r echo = FALSE, results = 'asis'}
+knitr::kable(map_code_test[1:10,])
+```
+The mapping is performed using General Equivalence Mapping (GEM) files provided by [CMS](https://www.cms.gov/Medicare/Coding/ICD9ProviderDiagnosticCodes/codes).
+This package uses the 2018 version of the GEMs files which were the last year which the GEMs files were updated (see [here](https://www.cms.gov/Medicare/Coding/ICD10/2019-ICD-10-CM)):
+
+> As stated in the FY 2016 IPPS/LTCH PPS final rule (80 FR 49388), the GEMs have been updated on an annual basis as part of the ICD-10 Coordination and Maintenance Committee meetings process and will continue to be updated for approximately 3 years after ICD-10 is implemented.
+
+## `get_description`
+This function takes a list of ICD codes and gets the code descriptions using CMS provided tables.
+For consistency, the 2018 version of the tables were used for ICD-10.
 ```{r}
-map_describe_test <- map_describe(example_data_icd9_pc$icd9_pc, icdVer = 10, type = "pc")
+get_description_test <- get_description(example_data_icd9_pc$icd9_pc, icdVer = 9, code_type = "pc")
 ```
 
+```{r echo=FALSE, results='asis'}
+knitr::kable(get_description_test[1:10,])
+```
+
+## `map_describe`
+This function combines the functionality of `map_code` and `get_description` into one.
+It maps the codes to the desired ICD version and gets the corresponding descriptions for the mapped codes.
+```{r}
+map_describe_test <- map_describe(example_data_icd9_pc$icd9_pc, icdVer_dest = 10, code_type = "pc")
+```
+
+```{r echo=FALSE, results='asis'}
+rownames(map_describe_test) <- NULL
+knitr::kable(map_describe_test[1:10,])
+```
 
 
 
