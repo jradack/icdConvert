@@ -10,7 +10,7 @@
 #' @export
 map_code <- function(codes, icdVer_dest, code_type){
   # Load appropriate GEM file
-  gem <- switch(paste0(icdVer_dest, code_type), "9dg" = NULL, "10dg" = dg_9_10_gem, "9pc" = NULL, "10pc" = pc_9_10_gem)
+  gem <- switch(paste0(icdVer_dest, code_type), "9dg" = dg_10_9_gem, "10dg" = dg_9_10_gem, "9pc" = pc_10_9_gem, "10pc" = pc_9_10_gem)
   if(is.null(gem)){
     stop("Error: improper ICD version or code type, or GEM file currently unavailable")
   }
