@@ -4,14 +4,14 @@
 \alias{get_description}
 \title{Get Description}
 \usage{
-get_description(codes, icdVer, type)
+get_description(codes, icdVer, code_type)
 }
 \arguments{
 \item{codes}{A vector of ICD diagnosis or procedure codes.}
 
-\item{icdVer}{A number, either 9 or 10, indicating the destination ICD version.}
+\item{icdVer}{A number, either 9 or 10, indicating the ICD version.}
 
-\item{type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
+\item{code_type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
 }
 \value{
 A dataframe with the ICD code and its description.

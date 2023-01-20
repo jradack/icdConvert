@@ -2,16 +2,16 @@
 % Please edit documentation in R/mapping.R
 \name{map_describe}
 \alias{map_describe}
-\title{Function that maps code and gets description of the mapped codes}
+\title{Map Code and Get Description}
 \usage{
-map_describe(codes, icdVer, type, keepMapCode = FALSE)
+map_describe(codes, icdVer_dest, code_type, keepMapCode = FALSE)
 }
 \arguments{
 \item{codes}{A vector of ICD diagnosis or procedure codes.}
 
-\item{icdVer}{A number, either 9 or 10, indicating the destination ICD version.}
+\item{icdVer_dest}{A number, either 9 or 10, indicating the destination ICD version.}
 
-\item{type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
+\item{code_type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
 
 \item{keepMapCode}{Boolean - if true, returned data frame will keep the map code and associated columns, otherwise they are dropped.}
 }

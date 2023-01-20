@@ -4,14 +4,14 @@
 \alias{map_code}
 \title{Map Code}
 \usage{
-map_code(codes, icdVer, type)
+map_code(codes, icdVer_dest, code_type)
 }
 \arguments{
 \item{codes}{A vector of ICD diagnosis or procedure codes.}
 
-\item{icdVer}{A number, either 9 or 10, indicating the destination ICD version.}
+\item{icdVer_dest}{A number, either 9 or 10, indicating the destination ICD version.}
 
-\item{type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
+\item{code_type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
 }
 \value{
 A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.

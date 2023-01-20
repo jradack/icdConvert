@@ -2,15 +2,15 @@
 #'
 #' Map ICD diagnosis or procedure codes to and from either ICD9 or ICD10.
 #' @param codes A vector of ICD diagnosis or procedure codes.
-#' @param icdVer A number, either 9 or 10, indicating the destination ICD version.
-#' @param type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
+#' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
+#' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
 #'
 #' @return A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
 #'
 #' @export
-map_code <- function(codes, icdVer, type){
+map_code <- function(codes, icdVer_dest, code_type){
   # Load appropriate GEM file
-  gem <- switch(paste0(icdVer, type), "9dg" = NULL, "10dg" = dg_9_10_gem, "9pc" = NULL, "10pc" = pc_9_10_gem)
+  gem <- switch(paste0(icdVer_dest, code_type), "9dg" = NULL, "10dg" = dg_9_10_gem, "9pc" = NULL, "10pc" = pc_9_10_gem)
   if(is.null(gem)){
     stop("Error: improper ICD version or code type, or GEM file currently unavailable")
   }
@@ -35,15 +35,15 @@ map_code <- function(codes, icdVer, type){
 #'
 #' Function to get description of a code.
 #' @param codes A vector of ICD diagnosis or procedure codes.
-#' @param icdVer A number, either 9 or 10, indicating the destination ICD version.
-#' @param type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
+#' @param icdVer A number, either 9 or 10, indicating the ICD version.
+#' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
 #'
 #' @return A dataframe with the ICD code and its description.
 #'
 #' @export
-get_description <- function(codes, icdVer, type){
+get_description <- function(codes, icdVer, code_type){
   # Load description file
-  descriptions <- switch(paste0(icdVer, type), "9dg" = icd9_dg, "10dg" = icd10_dg, "9pc" = icd9_pc, "10pc" = icd10_pc)
+  descriptions <- switch(paste0(icdVer, code_type), "9dg" = icd9_dg, "10dg" = icd10_dg, "9pc" = icd9_pc, "10pc" = icd10_pc)
   if(is.null(descriptions)){
     stop("Error: improper ICD version or code type")
   }
@@ -60,25 +60,25 @@ get_description <- function(codes, icdVer, type){
 }
 
 
-#'
+#' Map Code and Get Description
 #'
 #' Function that maps code and gets description of the mapped codes
 #' @param codes A vector of ICD diagnosis or procedure codes.
-#' @param icdVer A number, either 9 or 10, indicating the destination ICD version.
-#' @param type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
+#' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
+#' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
 #' @param keepMapCode Boolean - if true, returned data frame will keep the map code and associated columns, otherwise they are dropped.
 #'
 #' @return A dataframe with the original ICD code, the matching code, descriptions for both, and potentially columns for the map codes.
 #'
 #' @export
-map_describe <- function(codes, icdVer, type, keepMapCode = FALSE) {
-  srcICDVer <- ifelse(icdVer == 9, 10, 9)
+map_describe <- function(codes, icdVer_dest, code_type, keepMapCode = FALSE) {
+  srcICDVer <- ifelse(icdVer_dest == 9, 10, 9)
 
-  mapped <- map_code(codes, icdVer, type)
+  mapped <- map_code(codes, icdVer_dest, code_type)
   mapped$ord <- 1:nrow(mapped)
-  src_desc <- get_description(mapped$src_code, srcICDVer, type)
+  src_desc <- get_description(mapped$src_code, srcICDVer, code_type)
   colnames(src_desc)[2] <- "src_desc"
-  dest_desc <- get_description(mapped$dest_code, icdVer, type)
+  dest_desc <- get_description(mapped$dest_code, icdVer_dest, code_type)
   colnames(dest_desc)[2] <- "dest_desc"
 
   result <- merge(mapped, src_desc, by.x = "src_code", by.y = "codes", all.x = TRUE)
