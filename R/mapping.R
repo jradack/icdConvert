@@ -1,14 +1,15 @@
-#' Map Code
+#' Map Stage
 #'
 #' Map ICD diagnosis or procedure codes to and from either ICD9 or ICD10.
 #' @param codes A vector of ICD diagnosis or procedure codes.
 #' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
 #' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
+#' @param direction A string, either "forward" or "backward", to indicate the direction of the mapping.
 #'
 #' @return A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
 #'
 #' @export
-map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction = c("forward", "backward")){
+map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction = c("forward", "backward")){
   code_type <- match.arg(code_type)
   direction <- match.arg(direction)
 
@@ -36,6 +37,57 @@ map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction = 
 
   return(matches)
 }
+
+#' Map Code
+#'
+#' Map ICD diagnosis or procedure codes to and from either ICD9 or ICD10.
+#' @param codes A vector of ICD diagnosis or procedure codes.
+#' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
+#' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
+#' @param method
+#'
+#' @return A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
+#'
+#' @export
+map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("gem", "reverse-gem", "both", "multi-stage")){
+  code_type <- match.arg(code_type)
+  method <- match.arg(method)
+
+  if(method == "gem"){
+    matches <- map_stage(codes, icdVer_dest, code_type, "forward")
+  }else if(method == "reverse-gem"){
+    matches <- map_stage(codes, icdVer_dest, code_type, "backward")
+  }else if(method == "both"){
+    matches <- unique(rbind(map_stage(codes, icdVer_dest, code_type, "forward"),
+                            map_stage(codes, icdVer_dest, code_type, "backward")))
+    matches <- matches[!is.na(matches$dest_code),]
+  }else if(method == "multi-stage"){
+    srcICDVer <- ifelse(icdVer_dest == 9, 10, 9)
+
+    # Perform multi-stage matching
+    stage1 <- unique(rbind(map_stage(codes, icdVer_dest, code_type, "forward"),
+                           map_stage(codes, icdVer_dest, code_type, "backward")))
+    stage1_codes <- unique(stage1$dest_code[!is.na(stage1$dest_code)])
+    stage2 <- unique(rbind(map_stage(stage1_codes, srcICDVer, code_type, "forward"),
+                           map_stage(stage1_codes, srcICDVer, code_type, "backward")))
+    stage2_codes <- unique(stage2$dest_code[!is.na(stage2$dest_code)])
+    stage3 <- unique(rbind(map_stage(stage2_codes, icdVer_dest, code_type, "forward"),
+                           map_stage(stage2_codes, icdVer_dest, code_type, "backward")))
+
+    # Clean up results
+    matches <- merge(merge(stage1[,c("src_code", "dest_code")], stage2[,c("src_code", "dest_code")],
+                     by.x = "dest_code", by.y = "src_code"),
+               stage3[,c("src_code", "dest_code")],
+               by.x = "dest_code.y", by.y = "src_code")
+    matches <- matches[,c("src_code", "dest_code.y.y")]
+    colnames(matches) <- c("src_code", "dest_code")
+    matches <- unique(matches[!is.na(matches$dest_code),])
+    matches <- matches[order( matches[,"src_code"], matches[,"dest_code"] ),]
+  }
+
+  return(matches)
+}
+
 
 #' Get Description
 #'
