@@ -4,7 +4,13 @@
 \alias{map_describe}
 \title{Map Code and Get Description}
 \usage{
-map_describe(codes, icdVer_dest, code_type, keepMapCode = FALSE)
+map_describe(
+  codes,
+  icdVer_dest,
+  code_type = c("dg", "pc"),
+  method = c("gem", "reverse-gem", "both", "multi-stage"),
+  keepMapCode = FALSE
+)
 }
 \arguments{
 \item{codes}{A vector of ICD diagnosis or procedure codes.}
@@ -12,6 +18,8 @@ map_describe(codes, icdVer_dest, code_type, keepMapCode = FALSE)
 \item{icdVer_dest}{A number, either 9 or 10, indicating the destination ICD version.}
 
 \item{code_type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
+
+\item{method}{A string, either "gem", "reverse-gem", "both", or "multi-stage". See documentation on \code{map_code} for more details.}
 
 \item{keepMapCode}{Boolean - if true, returned data frame will keep the map code and associated columns, otherwise they are dropped.}
 }

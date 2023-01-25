@@ -24,5 +24,8 @@ map_stage(
 A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
 }
 \description{
-Map ICD diagnosis or procedure codes to and from either ICD9 or ICD10.
+Performs a single stage of ICD code mapping, either the forward map or the
+backward map. The forward map takes the source codes and maps to the destination
+codes using the GEM, while the backward map finds all the codes mapped to the
+source codes in the GEM of the opposite direction.
 }

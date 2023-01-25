@@ -18,7 +18,12 @@ map_code(
 
 \item{code_type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
 
-\item{method}{}
+\item{method}{A string specifying the method for mapping the codes. The same methods as implemented by the \code{icd_convert} function in the touch \code{package}. \itemize{
+\item \code{"gem"} performs a single forward mapping.
+\item \code{"reverse-gem"} performs a single backward mapping.
+\item \code{"both"} perfroms a single forward and backward mapping, combining the results.
+\item \code{"multi-stage"} performs the multiple-stage mapping, as described in the \code{touch} package.
+}}
 }
 \value{
 A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
