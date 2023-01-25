@@ -28,50 +28,78 @@ library(icdConvert)
 
 The package contains three primary functions(`map_code`, `get_description`, and `map_describe`) and a dataframe (`example_data_icd9_pc`).
 The example dataframe has the character column `icd9_pc`, which is a list of ICD-9 procedure codes.
-This vignette will demo these primary functions using `example_data_icd9_pc`.
 ```{r echo = FALSE, results='asis'}
 knitr::kable(example_data_icd9_pc[1:10,])
 ```
 
 # Function demos
-## `map_code`
-This function takes a vector or ICD codes and converts them to the corresponding ICD version.
-The user must specify the destination ICD version (i.e. which ICD version they want to convert the codes to) and the type of code being converted (`"dg"` for diagnosis codes, `"pc"` for procedure codes).
-This package handles one-to-many mappings of codes.
-When no match can be found, the returned destination code is the string `"No matches found"`.
+## `get_description`
+Suppose we have the ICD-9 procedure code `1421`.
+We can get it's description using the `get_description` command.
 ```{r}
-# map_code_test <- map_code(example_data_icd9_pc$icd9_pc, icdVer_dest = 10, code_type = "pc")
+get_description_test <- get_description("1421", icdVer = 9, code_type = "pc")
+```
+
+```{r echo=FALSE, results='asis'}
+knitr::kable(get_description_test)
+```
+This function takes a list of ICD codes and gets the code descriptions using CMS provided tables.
+For consistency with the GEM files, the 2018 version of the tables were used for ICD-10.
+
+## `map_code`
+Next, suppose we would like to map the ICD-9 procedure code `1421` to ICD-10.
+We can use the `map_code` function, which takes a vector or ICD codes and converts them to the desired ICD version.
+The user must specify the destination ICD version (i.e. which ICD version they want to convert the codes to) and the type of code being converted (`"dg"` for diagnosis codes, `"pc"` for procedure codes).
+This package handles one-to-many mappings of codes, as well as implementing the four methods of mapping codes, as outlined in the `touch` package.
+The four methods are `"gem"`, `"reverse-gem"`, `"both"`, and `"multi-stage"`.
+`"gem"` performs a single forward map
+```{r}
+map_code_test_gem <- map_code("1421", icdVer_dest = 10, code_type = "pc", method = "gem")
 ```
 
 ```{r echo = FALSE, results = 'asis'}
-# knitr::kable(map_code_test[1:10,])
+knitr::kable(map_code_test_gem)
 ```
+
+`"reverse-gem"` performs a single reverse map, in this case finding all ICD-10 codes that map to the ICD-9 code that we pass.
+The following are the first 10 results for ICD-9 procedure code `142`.
+```{r}
+map_code_test_reverse_gem <- map_code("142", icdVer_dest = 10, code_type = "pc", method = "reverse-gem")
+```
+
+```{r echo = FALSE, results = 'asis'}
+knitr::kable(map_code_test_reverse_gem[1:10,])
+```
+`"both"` performs the `"gem"` and `"reverse-gem"` mappings and combines the results.
+
+`"multi-stage"` performs the multi-stage mapping that the `icd_convert` function in the `touch` package performs.
+See [here](https://cran.r-project.org/web/packages/touch/touch.pdf) for details on how the mapping is done.
+The following are the first 10 results for ICD-9 procedure code `1421`.
+```{r}
+map_code_test_multi_stage <- map_code("1421", icdVer_dest = 10, code_type = "pc", method = "multi-stage")
+```
+
+```{r echo = FALSE, results = 'asis'}
+knitr::kable(map_code_test_multi_stage[1:10,])
+```
+
 The mapping is performed using General Equivalence Mapping (GEM) files provided by [CMS](https://www.cms.gov/Medicare/Coding/ICD9ProviderDiagnosticCodes/codes).
 This package uses the 2018 version of the GEMs files which were the last year which the GEMs files were updated (see [here](https://www.cms.gov/Medicare/Coding/ICD10/2019-ICD-10-CM)):
 
 > As stated in the FY 2016 IPPS/LTCH PPS final rule (80 FR 49388), the GEMs have been updated on an annual basis as part of the ICD-10 Coordination and Maintenance Committee meetings process and will continue to be updated for approximately 3 years after ICD-10 is implemented.
 
-## `get_description`
-This function takes a list of ICD codes and gets the code descriptions using CMS provided tables.
-For consistency, the 2018 version of the tables were used for ICD-10.
-```{r}
-# get_description_test <- get_description(example_data_icd9_pc$icd9_pc, icdVer = 9, code_type = "pc")
-```
-
-```{r echo=FALSE, results='asis'}
-# knitr::kable(get_description_test[1:10,])
-```
 
 ## `map_describe`
-This function combines the functionality of `map_code` and `get_description` into one.
+Finally, the `map_describe` function combines the functionality of `map_code` and `get_description` into one.
 It maps the codes to the desired ICD version and gets the corresponding descriptions for the mapped codes.
+The following are the first 10 results for ICD-9 procedure code `1421`.
 ```{r}
-# map_describe_test <- map_describe(example_data_icd9_pc$icd9_pc, icdVer_dest = 10, code_type = "pc")
+map_describe_test <- map_describe("1421", icdVer_dest = 10, code_type = "pc", method = "multi-stage")
 ```
 
 ```{r echo=FALSE, results='asis'}
-# rownames(map_describe_test) <- NULL
-# knitr::kable(map_describe_test[1:10,])
+rownames(map_describe_test) <- NULL
+knitr::kable(map_describe_test[1:10,])
 ```
 
 
