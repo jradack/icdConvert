@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">icdConvert</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -83,8 +83,7 @@ but you should be able to ignore this.</p>
 <code>get_description</code>, and <code>map_describe</code>) and a
 dataframe (<code>example_data_icd9_pc</code>). The example dataframe has
 the character column <code>icd9_pc</code>, which is a list of ICD-9
-procedure codes. This vignette will demo these primary functions using
-<code>example_data_icd9_pc</code>.</p>
+procedure codes.</p>
 <table class="table">
 <thead><tr class="header">
 <th align="left">x</th>
@@ -127,28 +126,105 @@ procedure codes. This vignette will demo these primary functions using
 <h2 id="function-demos">Function demos<a class="anchor" aria-label="anchor" href="#function-demos"></a>
 </h2>
 <div class="section level3">
+<h3 id="get_description">
+<code>get_description</code><a class="anchor" aria-label="anchor" href="#get_description"></a>
+</h3>
+<p>Suppose we have the ICD-9 procedure code <code>1421</code>. We can
+get it’s description using the <code>get_description</code> command.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">get_description_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_description.html">get_description</a></span><span class="op">(</span><span class="st">"1421"</span>, icdVer <span class="op">=</span> <span class="fl">9</span>, code_type <span class="op">=</span> <span class="st">"pc"</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="left">codes</th>
+<th align="left">desc</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td align="left">1421</td>
+<td align="left">Destruction of chorioretinal lesion by diathermy</td>
+</tr></tbody>
+</table>
+<p>This function takes a list of ICD codes and gets the code
+descriptions using CMS provided tables. For consistency with the GEM
+files, the 2018 version of the tables were used for ICD-10.</p>
+</div>
+<div class="section level3">
 <h3 id="map_code">
 <code>map_code</code><a class="anchor" aria-label="anchor" href="#map_code"></a>
 </h3>
-<p>This function takes a vector or ICD codes and converts them to the
-corresponding ICD version. The user must specify the destination ICD
-version (i.e. which ICD version they want to convert the codes to) and
-the type of code being converted (<code>"dg"</code> for diagnosis codes,
+<p>Next, suppose we would like to map the ICD-9 procedure code
+<code>1421</code> to ICD-10. We can use the <code>map_code</code>
+function, which takes a vector or ICD codes and converts them to the
+desired ICD version. The user must specify the destination ICD version
+(i.e. which ICD version they want to convert the codes to) and the type
+of code being converted (<code>"dg"</code> for diagnosis codes,
 <code>"pc"</code> for procedure codes). This package handles one-to-many
-mappings of codes. When no match can be found, the returned destination
-code is the string <code>"No matches found"</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">map_code_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_code.html">map_code</a></span><span class="op">(</span><span class="va">example_data_icd9_pc</span><span class="op">$</span><span class="va">icd9_pc</span>, icdVer_dest <span class="op">=</span> <span class="fl">10</span>, code_type <span class="op">=</span> <span class="st">"pc"</span><span class="op">)</span></span></code></pre></div>
-<table style="width:100%;" class="table">
+mappings of codes, as well as implementing the four methods of mapping
+codes, as outlined in the <code>touch</code> package. The four methods
+are <code>"gem"</code>, <code>"reverse-gem"</code>, <code>"both"</code>,
+and <code>"multi-stage"</code>. <code>"gem"</code> performs a single
+forward map</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">map_code_test_gem</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_code.html">map_code</a></span><span class="op">(</span><span class="st">"1421"</span>, icdVer_dest <span class="op">=</span> <span class="fl">10</span>, code_type <span class="op">=</span> <span class="st">"pc"</span>, method <span class="op">=</span> <span class="st">"gem"</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
 <colgroup>
-<col width="10%">
-<col width="19%">
-<col width="10%">
-<col width="13%">
-<col width="7%">
-<col width="13%">
-<col width="10%">
+<col width="11%">
+<col width="12%">
+<col width="11%">
 <col width="14%">
+<col width="8%">
+<col width="14%">
+<col width="11%">
+<col width="16%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">src_code</th>
+<th align="left">dest_code</th>
+<th align="left">map_code</th>
+<th align="left">approximate</th>
+<th align="left">no_map</th>
+<th align="left">combination</th>
+<th align="left">scenario</th>
+<th align="left">choice_lists</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">1421</td>
+<td align="left">085E3ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">1421</td>
+<td align="left">085F3ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+</tbody>
+</table>
+<p><code>"reverse-gem"</code> performs a single reverse map, in this
+case finding all ICD-10 codes that map to the ICD-9 code that we pass.
+The following are the first 10 results for ICD-9 procedure code
+<code>142</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">map_code_test_reverse_gem</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_code.html">map_code</a></span><span class="op">(</span><span class="st">"142"</span>, icdVer_dest <span class="op">=</span> <span class="fl">10</span>, code_type <span class="op">=</span> <span class="st">"pc"</span>, method <span class="op">=</span> <span class="st">"reverse-gem"</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<colgroup>
+<col width="11%">
+<col width="12%">
+<col width="11%">
+<col width="14%">
+<col width="8%">
+<col width="14%">
+<col width="11%">
+<col width="16%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">src_code</th>
@@ -163,103 +239,171 @@ code is the string <code>"No matches found"</code>.</p>
 <tbody>
 <tr class="odd">
 <td align="left">142</td>
-<td align="left">No matches found</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
-<td align="left">NA</td>
+<td align="left">00580ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
 </tr>
 <tr class="even">
+<td align="left">142</td>
+<td align="left">00583ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">142</td>
+<td align="left">00584ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">142</td>
+<td align="left">00880ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">142</td>
+<td align="left">00883ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">142</td>
+<td align="left">00884ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">142</td>
+<td align="left">009800Z</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">142</td>
+<td align="left">00980ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">142</td>
+<td align="left">009830Z</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">142</td>
+<td align="left">00983ZZ</td>
+<td align="left">10000</td>
+<td align="left">1</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+<td align="left">0</td>
+</tr>
+</tbody>
+</table>
+<p><code>"both"</code> performs the <code>"gem"</code> and
+<code>"reverse-gem"</code> mappings and combines the results.</p>
+<p><code>"multi-stage"</code> performs the multi-stage mapping that the
+<code>icd_convert</code> function in the <code>touch</code> package
+performs. See <a href="https://cran.r-project.org/web/packages/touch/touch.pdf" class="external-link">here</a>
+for details on how the mapping is done. The following are the first 10
+results for ICD-9 procedure code <code>1421</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">map_code_test_multi_stage</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_code.html">map_code</a></span><span class="op">(</span><span class="st">"1421"</span>, icdVer_dest <span class="op">=</span> <span class="fl">10</span>, code_type <span class="op">=</span> <span class="st">"pc"</span>, method <span class="op">=</span> <span class="st">"multi-stage"</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="left"></th>
+<th align="left">src_code</th>
+<th align="left">dest_code</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">111</td>
+<td align="left">1421</td>
+<td align="left">02JA4ZZ</td>
+</tr>
+<tr class="even">
+<td align="left">110</td>
+<td align="left">1421</td>
+<td align="left">02JY4ZZ</td>
+</tr>
+<tr class="odd">
+<td align="left">2</td>
 <td align="left">1421</td>
 <td align="left">085E3ZZ</td>
-<td align="left">10000</td>
-<td align="left">1</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
 </tr>
-<tr class="odd">
+<tr class="even">
+<td align="left">3</td>
 <td align="left">1421</td>
 <td align="left">085F3ZZ</td>
-<td align="left">10000</td>
-<td align="left">1</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-</tr>
-<tr class="even">
-<td align="left">1422</td>
-<td align="left">085E3ZZ</td>
-<td align="left">10000</td>
-<td align="left">1</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
 </tr>
 <tr class="odd">
-<td align="left">1422</td>
-<td align="left">085F3ZZ</td>
-<td align="left">10000</td>
-<td align="left">1</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
+<td align="left">39</td>
+<td align="left">1421</td>
+<td align="left">08BE3ZZ</td>
 </tr>
 <tr class="even">
-<td align="left">1423</td>
-<td align="left">085E3ZZ</td>
-<td align="left">10000</td>
-<td align="left">1</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
+<td align="left">40</td>
+<td align="left">1421</td>
+<td align="left">08BF3ZZ</td>
 </tr>
 <tr class="odd">
-<td align="left">1423</td>
-<td align="left">085F3ZZ</td>
-<td align="left">10000</td>
-<td align="left">1</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
+<td align="left">265</td>
+<td align="left">1421</td>
+<td align="left">0B9N0ZX</td>
 </tr>
 <tr class="even">
-<td align="left">1424</td>
-<td align="left">085E3ZZ</td>
-<td align="left">10000</td>
-<td align="left">1</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
+<td align="left">233</td>
+<td align="left">1421</td>
+<td align="left">0B9N3ZX</td>
 </tr>
 <tr class="odd">
-<td align="left">1424</td>
-<td align="left">085F3ZZ</td>
-<td align="left">10000</td>
-<td align="left">1</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
+<td align="left">254</td>
+<td align="left">1421</td>
+<td align="left">0B9N4ZX</td>
 </tr>
 <tr class="even">
-<td align="left">1425</td>
-<td align="left">085E3ZZ</td>
-<td align="left">10000</td>
-<td align="left">1</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
-<td align="left">0</td>
+<td align="left">228</td>
+<td align="left">1421</td>
+<td align="left">0B9N8ZX</td>
 </tr>
 </tbody>
 </table>
@@ -276,88 +420,22 @@ implemented.</p>
 </blockquote>
 </div>
 <div class="section level3">
-<h3 id="get_description">
-<code>get_description</code><a class="anchor" aria-label="anchor" href="#get_description"></a>
-</h3>
-<p>This function takes a list of ICD codes and gets the code
-descriptions using CMS provided tables. For consistency, the 2018
-version of the tables were used for ICD-10.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">get_description_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_description.html">get_description</a></span><span class="op">(</span><span class="va">example_data_icd9_pc</span><span class="op">$</span><span class="va">icd9_pc</span>, icdVer <span class="op">=</span> <span class="fl">9</span>, code_type <span class="op">=</span> <span class="st">"pc"</span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<colgroup>
-<col width="7%">
-<col width="92%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">codes</th>
-<th align="left">desc</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">142</td>
-<td align="left">NA</td>
-</tr>
-<tr class="even">
-<td align="left">1421</td>
-<td align="left">Destruction of chorioretinal lesion by diathermy</td>
-</tr>
-<tr class="odd">
-<td align="left">1422</td>
-<td align="left">Destruction of chorioretinal lesion by cryotherapy</td>
-</tr>
-<tr class="even">
-<td align="left">1423</td>
-<td align="left">Destruction of chorioretinal lesion by xenon arc
-photocoagulation</td>
-</tr>
-<tr class="odd">
-<td align="left">1424</td>
-<td align="left">Destruction of chorioretinal lesion by laser
-photocoagulation</td>
-</tr>
-<tr class="even">
-<td align="left">1425</td>
-<td align="left">Destruction of chorioretinal lesion by photocoagulation
-of unspecified type</td>
-</tr>
-<tr class="odd">
-<td align="left">1426</td>
-<td align="left">Destruction of chorioretinal lesion by radiation
-therapy</td>
-</tr>
-<tr class="even">
-<td align="left">1427</td>
-<td align="left">Destruction of chorioretinal lesion by implantation of
-radiation source</td>
-</tr>
-<tr class="odd">
-<td align="left">1429</td>
-<td align="left">Other destruction of chorioretinal lesion</td>
-</tr>
-<tr class="even">
-<td align="left">1434</td>
-<td align="left">Repair of retinal tear by laser photocoagulation</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="section level3">
 <h3 id="map_describe">
 <code>map_describe</code><a class="anchor" aria-label="anchor" href="#map_describe"></a>
 </h3>
-<p>This function combines the functionality of <code>map_code</code> and
-<code>get_description</code> into one. It maps the codes to the desired
-ICD version and gets the corresponding descriptions for the mapped
-codes.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">map_describe_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_describe.html">map_describe</a></span><span class="op">(</span><span class="va">example_data_icd9_pc</span><span class="op">$</span><span class="va">icd9_pc</span>, icdVer_dest <span class="op">=</span> <span class="fl">10</span>, code_type <span class="op">=</span> <span class="st">"pc"</span><span class="op">)</span></span></code></pre></div>
+<p>Finally, the <code>map_describe</code> function combines the
+functionality of <code>map_code</code> and <code>get_description</code>
+into one. It maps the codes to the desired ICD version and gets the
+corresponding descriptions for the mapped codes. The following are the
+first 10 results for ICD-9 procedure code <code>1421</code>.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">map_describe_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/map_describe.html">map_describe</a></span><span class="op">(</span><span class="st">"1421"</span>, icdVer_dest <span class="op">=</span> <span class="fl">10</span>, code_type <span class="op">=</span> <span class="st">"pc"</span>, method <span class="op">=</span> <span class="st">"multi-stage"</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
 <colgroup>
 <col width="5%">
-<col width="49%">
-<col width="11%">
-<col width="33%">
+<col width="32%">
+<col width="6%">
+<col width="54%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">src_code</th>
@@ -367,69 +445,70 @@ codes.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td align="left">142</td>
-<td align="left">NA</td>
-<td align="left">No matches found</td>
-<td align="left">NA</td>
+<td align="left">1421</td>
+<td align="left">Destruction of chorioretinal lesion by diathermy</td>
+<td align="left">02JA4ZZ</td>
+<td align="left">Inspection of Heart, Percutaneous Endoscopic
+Approach</td>
 </tr>
 <tr class="even">
+<td align="left">1421</td>
+<td align="left">Destruction of chorioretinal lesion by diathermy</td>
+<td align="left">02JY4ZZ</td>
+<td align="left">Inspection of Great Vessel, Percutaneous Endoscopic
+Approach</td>
+</tr>
+<tr class="odd">
 <td align="left">1421</td>
 <td align="left">Destruction of chorioretinal lesion by diathermy</td>
 <td align="left">085E3ZZ</td>
 <td align="left">Destruction of Right Retina, Percutaneous Approach</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">1421</td>
 <td align="left">Destruction of chorioretinal lesion by diathermy</td>
 <td align="left">085F3ZZ</td>
 <td align="left">Destruction of Left Retina, Percutaneous Approach</td>
 </tr>
+<tr class="odd">
+<td align="left">1421</td>
+<td align="left">Destruction of chorioretinal lesion by diathermy</td>
+<td align="left">08BE3ZZ</td>
+<td align="left">Excision of Right Retina, Percutaneous Approach</td>
+</tr>
 <tr class="even">
-<td align="left">1422</td>
-<td align="left">Destruction of chorioretinal lesion by cryotherapy</td>
-<td align="left">085E3ZZ</td>
-<td align="left">Destruction of Right Retina, Percutaneous Approach</td>
+<td align="left">1421</td>
+<td align="left">Destruction of chorioretinal lesion by diathermy</td>
+<td align="left">08BF3ZZ</td>
+<td align="left">Excision of Left Retina, Percutaneous Approach</td>
 </tr>
 <tr class="odd">
-<td align="left">1422</td>
-<td align="left">Destruction of chorioretinal lesion by cryotherapy</td>
-<td align="left">085F3ZZ</td>
-<td align="left">Destruction of Left Retina, Percutaneous Approach</td>
+<td align="left">1421</td>
+<td align="left">Destruction of chorioretinal lesion by diathermy</td>
+<td align="left">0B9N0ZX</td>
+<td align="left">Drainage of Right Pleura, Open Approach,
+Diagnostic</td>
 </tr>
 <tr class="even">
-<td align="left">1423</td>
-<td align="left">Destruction of chorioretinal lesion by xenon arc
-photocoagulation</td>
-<td align="left">085E3ZZ</td>
-<td align="left">Destruction of Right Retina, Percutaneous Approach</td>
+<td align="left">1421</td>
+<td align="left">Destruction of chorioretinal lesion by diathermy</td>
+<td align="left">0B9N3ZX</td>
+<td align="left">Drainage of Right Pleura, Percutaneous Approach,
+Diagnostic</td>
 </tr>
 <tr class="odd">
-<td align="left">1423</td>
-<td align="left">Destruction of chorioretinal lesion by xenon arc
-photocoagulation</td>
-<td align="left">085F3ZZ</td>
-<td align="left">Destruction of Left Retina, Percutaneous Approach</td>
+<td align="left">1421</td>
+<td align="left">Destruction of chorioretinal lesion by diathermy</td>
+<td align="left">0B9N4ZX</td>
+<td align="left">Drainage of Right Pleura, Percutaneous Endoscopic
+Approach, Diagnostic</td>
 </tr>
 <tr class="even">
-<td align="left">1424</td>
-<td align="left">Destruction of chorioretinal lesion by laser
-photocoagulation</td>
-<td align="left">085E3ZZ</td>
-<td align="left">Destruction of Right Retina, Percutaneous Approach</td>
-</tr>
-<tr class="odd">
-<td align="left">1424</td>
-<td align="left">Destruction of chorioretinal lesion by laser
-photocoagulation</td>
-<td align="left">085F3ZZ</td>
-<td align="left">Destruction of Left Retina, Percutaneous Approach</td>
-</tr>
-<tr class="even">
-<td align="left">1425</td>
-<td align="left">Destruction of chorioretinal lesion by photocoagulation
-of unspecified type</td>
-<td align="left">085E3ZZ</td>
-<td align="left">Destruction of Right Retina, Percutaneous Approach</td>
+<td align="left">1421</td>
+<td align="left">Destruction of chorioretinal lesion by diathermy</td>
+<td align="left">0B9N8ZX</td>
+<td align="left">Drainage of Right Pleura, Via Natural or Artificial
+Opening Endoscopic, Diagnostic</td>
 </tr>
 </tbody>
 </table>
