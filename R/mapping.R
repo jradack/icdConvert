@@ -1,6 +1,10 @@
 #' Map Stage
 #'
-#' Map ICD diagnosis or procedure codes to and from either ICD9 or ICD10.
+#' Performs a single stage of ICD code mapping, either the forward map or the
+#' backward map. The forward map takes the source codes and maps to the destination
+#' codes using the GEM, while the backward map finds all the codes mapped to the
+#' source codes in the GEM of the opposite direction.
+#'
 #' @param codes A vector of ICD diagnosis or procedure codes.
 #' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
 #' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
@@ -44,7 +48,12 @@ map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction =
 #' @param codes A vector of ICD diagnosis or procedure codes.
 #' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
 #' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
-#' @param method
+#' @param method A string specifying the method for mapping the codes. The same methods as implemented by the \code{icd_convert} function in the touch \code{package}. \itemize{
+#'     \item \code{"gem"} performs a single forward mapping.
+#'     \item \code{"reverse-gem"} performs a single backward mapping.
+#'     \item \code{"both"} perfroms a single forward and backward mapping, combining the results.
+#'     \item \code{"multi-stage"} performs the multiple-stage mapping, as described in the \code{touch} package.
+#' }
 #'
 #' @return A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
 #'
@@ -124,15 +133,19 @@ get_description <- function(codes, icdVer, code_type){
 #' @param codes A vector of ICD diagnosis or procedure codes.
 #' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
 #' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
+#' @param method A string, either "gem", "reverse-gem", "both", or "multi-stage". See documentation on \code{map_code} for more details.
 #' @param keepMapCode Boolean - if true, returned data frame will keep the map code and associated columns, otherwise they are dropped.
 #'
 #' @return A dataframe with the original ICD code, the matching code, descriptions for both, and potentially columns for the map codes.
 #'
 #' @export
-map_describe <- function(codes, icdVer_dest, code_type, keepMapCode = FALSE) {
+map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("gem", "reverse-gem", "both", "multi-stage"), keepMapCode = FALSE) {
+  code_type <- match.arg(code_type)
+  method <- match.arg(method)
+
   srcICDVer <- ifelse(icdVer_dest == 9, 10, 9)
 
-  mapped <- map_code(codes, icdVer_dest, code_type)
+  mapped <- map_code(codes, icdVer_dest, code_type, method)
   mapped$ord <- 1:nrow(mapped)
   src_desc <- get_description(mapped$src_code, srcICDVer, code_type)
   colnames(src_desc)[2] <- "src_desc"
