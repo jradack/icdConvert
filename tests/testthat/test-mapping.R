@@ -41,3 +41,17 @@ test_that("map_code: multi-stage works",{
   expect_equal(m1$dest_code, c("O364XX0","O364XX1","O364XX2","O364XX3","O364XX4","O364XX5","O364XX9","O364XX0","O364XX1","O364XX2","O364XX3","O364XX4","O364XX5","O364XX9"))
 })
 
+#-------------------
+# Test map_describe
+#-------------------
+test_that("map_describe: check that codes are mapped and description provided",{
+  m1 <- map_describe(test_codes1, icdVer_dest = 10, code_type = "dg", method = "gem")
+  expect_equal(m1,
+               data.frame(src_code = c("65640", "65641"),
+                          src_desc = c("Intrauterine death, affecting management of mother, unspecified as to episode of care or not applicable", "Intrauterine death, affecting management of mother, delivered, with or without mention of antepartum condition"),
+                          dest_code = c("O364XX0","O364XX0"),
+                          dest_desc = c("Maternal care for intrauterine death, not applicable or unspecified", "Maternal care for intrauterine death, not applicable or unspecified")
+                          )
+               )
+})
+
