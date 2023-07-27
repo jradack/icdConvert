@@ -50,7 +50,7 @@ dg_10_9_gem <- icd_read_fwf("data-raw/gems_dg_2018/2018_I10gem.txt",
 
 # Procedure Codes (ICD 10 -> 9)
 pc_10_9_gem <- icd_read_fwf("data-raw/gems_pc_2018/gem_pcsi9.txt",
-                            width = c(7,-2,4,-1,5),
+                            width = c(7,-1,4,-2,5),
                             colNames = c('src','dest','map_code'))
 
 
@@ -82,8 +82,8 @@ icd10_pc <- icd_read_fwf("data-raw/descriptions/icd10pcs_codes_2018.txt",
                          colNames = c('code', 'desc'))
 # usethis::use_data(icd10_pc, overwrite = TRUE)
 
-usethis::use_data(dg_9_10_gem, pc_9_10_gem,
-                  dg_10_9_gem, pc_10_9_gem,
-                  icd9_dg, icd10_dg,
-                  icd9_pc, icd10_pc,
-                  internal = TRUE)
+usethis::use_data(
+  dg_9_10_gem, pc_9_10_gem, dg_10_9_gem, pc_10_9_gem,
+  icd9_dg, icd10_dg, icd9_pc, icd10_pc,
+  internal = TRUE, overwrite = TRUE
+  )
