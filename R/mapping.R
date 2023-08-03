@@ -33,13 +33,38 @@ map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction =
   colnames(matches)[1:2] <- c('src_code', 'dest_code')
 
   # Clean up for cases where no matching code was found
-  matches <- merge(data.frame(src_code = codes), matches, by.x = "src_code", by.y = "src_code", all.x = TRUE)
-  # matches$dest_code <- ifelse(is.na(matches$dest_code), "No matches found", matches$dest_code)
+  matches <- data.frame(src_code = codes) |>
+    dplyr::left_join(
+      matches,
+      by = "src_code"
+    )
 
   # Handling cases of a one to many map of the source code
-  matches <- matches[order(matches$src_code,matches$combination,matches$scenario,matches$choice_lists),]
+  matches <- matches |>
+    dplyr::arrange(
+      src_code, combination, scenario, choice_lists
+    )
 
   return(matches)
+}
+
+#' Forward-Backward Mapping
+#'
+#' Performs the bidirectional mapping of a code.
+#' @param codes A vector of ICD diagnosis or procedure codes.
+#' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
+#' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
+#'
+#' @return A dataframe with the bidirectionally mapped codes.
+#'
+#' @keywords Internal
+forward_backward <- function(codes, icdVer_dest, code_type) {
+  map_stage(codes, icdVer_dest, code_type, "forward") |>
+    dplyr::bind_rows(
+      map_stage(codes, icdVer_dest, code_type, "backward")
+    ) |>
+    dplyr::distinct() |>
+    dplyr::filter(!is.na(dest_code))
 }
 
 #' Map Code
@@ -67,31 +92,47 @@ map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("
   }else if(method == "reverse-gem"){
     matches <- map_stage(codes, icdVer_dest, code_type, "backward")
   }else if(method == "both"){
-    matches <- unique(rbind(map_stage(codes, icdVer_dest, code_type, "forward"),
-                            map_stage(codes, icdVer_dest, code_type, "backward")))
-    matches <- matches[!is.na(matches$dest_code),]
+    matches <- forward_backward(codes, icdVer_dest, code_type)
   }else if(method == "multi-stage"){
     srcICDVer <- ifelse(icdVer_dest == 9, 10, 9)
 
     # Perform multi-stage matching
-    stage1 <- unique(rbind(map_stage(codes, icdVer_dest, code_type, "forward"),
-                           map_stage(codes, icdVer_dest, code_type, "backward")))
-    stage1_codes <- unique(stage1$dest_code[!is.na(stage1$dest_code)])
-    stage2 <- unique(rbind(map_stage(stage1_codes, srcICDVer, code_type, "forward"),
-                           map_stage(stage1_codes, srcICDVer, code_type, "backward")))
-    stage2_codes <- unique(stage2$dest_code[!is.na(stage2$dest_code)])
-    stage3 <- unique(rbind(map_stage(stage2_codes, icdVer_dest, code_type, "forward"),
-                           map_stage(stage2_codes, icdVer_dest, code_type, "backward")))
+    stage1 <- forward_backward(codes, icdVer_dest, code_type)
+    stage1_codes <- stage1 |>
+      dplyr::distinct() |>
+      dplyr::pull(dest_code)
+    stage2 <- forward_backward(stage1_codes, srcICDVer, code_type)
+    stage2_codes <- stage2 |>
+      dplyr::distinct() |>
+      dplyr::pull(dest_code)
+    stage3 <- forward_backward(stage2_codes, icdVer_dest, code_type)
 
     # Clean up results
-    matches <- merge(merge(stage1[,c("src_code", "dest_code")], stage2[,c("src_code", "dest_code")],
-                     by.x = "dest_code", by.y = "src_code"),
-               stage3[,c("src_code", "dest_code")],
-               by.x = "dest_code.y", by.y = "src_code")
-    matches <- matches[,c("src_code", "dest_code.y.y")]
-    colnames(matches) <- c("src_code", "dest_code")
-    matches <- unique(matches[!is.na(matches$dest_code),])
-    matches <- matches[order( matches[,"src_code"], matches[,"dest_code"] ),]
+    matches <- stage1 |>
+      dplyr::select(src_code, dest_code) |>
+      dplyr::inner_join(
+        stage2 |>
+          dplyr::select(src_code, dest_code) |>
+          dplyr::filter(!is.na(dest_code)),
+        by = c("dest_code" = "src_code"),
+        relationship = "many-to-many"
+      ) |>
+      dplyr::inner_join(
+        stage3 |>
+          dplyr::select(src_code, dest_code) |>
+          dplyr::filter(!is.na(dest_code)),
+        by = c("dest_code.y" = "src_code"),
+        relationship = "many-to-many"
+      )
+
+    matches <- matches |>
+      dplyr::select(src_code, dest_code.y.y) |>
+      dplyr::rename(
+        "dest_code" = "dest_code.y.y"
+      ) |>
+      dplyr::filter(!is.na(dest_code)) |>
+      dplyr::distinct() |>
+      dplyr::arrange(src_code, dest_code)
   }
 
   return(matches)
@@ -120,8 +161,12 @@ get_description <- function(codes, icdVer, code_type){
   matches <- subset(descriptions, code %in% codes)
 
   # Join descriptions with the codes
-  result <- merge(as.data.frame(codes), matches, by.x = "codes", by.y = "code", all.x = TRUE)
-  result <- result[!duplicated(result),]
+  result <- as.data.frame(codes) |>
+    dplyr::left_join(
+      matches,
+      by = c("codes" = "code")
+    ) |>
+    dplyr::distinct()
   return(result)
 
 }
@@ -145,6 +190,7 @@ map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method =
 
   srcICDVer <- ifelse(icdVer_dest == 9, 10, 9)
 
+  # Map codes and get descriptions
   mapped <- map_code(codes, icdVer_dest, code_type, method)
   mapped$ord <- 1:nrow(mapped)
   src_desc <- get_description(mapped$src_code, srcICDVer, code_type)
@@ -152,17 +198,26 @@ map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method =
   dest_desc <- get_description(mapped$dest_code, icdVer_dest, code_type)
   colnames(dest_desc)[2] <- "dest_desc"
 
-  result <- merge(mapped, src_desc, by.x = "src_code", by.y = "codes", all.x = TRUE)
-  result <- merge(result, dest_desc, by.x = "dest_code", by.y = "codes", all.x = TRUE)
-
-  result <- result[order(result$ord),]
-
-  if(keepMapCode){
-    cols <- c("src_code","src_desc","dest_code","desc_dest","map_code","approximate","no_map","combination","scenario","choice_lists")
-  } else {
-    cols <- c("src_code","src_desc","dest_code","dest_desc")
-  }
-  result <- result[,cols]
+  # Join mapped codes with descriptions, filter columns based on keepMapCode option
+  result <- mapped |>
+    dplyr::left_join(
+      src_desc,
+      by = c("src_code" = "codes")
+    ) |>
+    dplyr::left_join(
+      dest_desc,
+      by = c("dest_code" = "codes")
+    ) |>
+    dplyr::arrange(ord) |>
+    (
+      \(.){
+        if(keepMapCode) {
+          dplyr::select(., src_code, src_desc, dest_code, dest_desc, map_code, approximate, no_map, combination, scenario, choice_lists)
+        } else {
+          dplyr::select(., src_code, src_desc, dest_code, dest_desc)
+        }
+      }
+    )()
 
   return(result)
 }
