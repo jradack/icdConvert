@@ -12,6 +12,8 @@
 #'
 #' @return A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
 #'
+#' @importFrom rlang .data
+#'
 #' @export
 map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction = c("forward", "backward")){
   code_type <- match.arg(code_type)
@@ -21,13 +23,13 @@ map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction =
     # Load appropriate GEM file
     gem <- switch(paste0(icdVer_dest, code_type), "9dg" = dg_10_9_gem, "10dg" = dg_9_10_gem, "9pc" = pc_10_9_gem, "10pc" = pc_9_10_gem)
     # Subset GEM file based on codes
-    matches <- subset(gem, src %in% codes)
+    matches <- dplyr::filter(gem, .data$src %in% codes)
   } else if(direction == "backward"){
     # Load appropriate GEM file
     gem <- switch(paste0(icdVer_dest, code_type), "9dg" = dg_9_10_gem, "10dg" = dg_10_9_gem, "9pc" = pc_9_10_gem, "10pc" = pc_10_9_gem)
     # Subset GEM file based on codes
-    matches <- subset(gem, dest %in% codes)
-    matches <- matches[,c('dest','src',colnames(matches)[3:8])]
+    matches <- dplyr::filter(gem, .data$dest %in% codes) |>
+      dplyr::select('dest', 'src', 3:8)
   }
 
   colnames(matches)[1:2] <- c('src_code', 'dest_code')
@@ -42,7 +44,7 @@ map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction =
   # Handling cases of a one to many map of the source code
   matches <- matches |>
     dplyr::arrange(
-      src_code, combination, scenario, choice_lists
+      .data$src_code, .data$combination, .data$scenario, .data$choice_lists
     )
 
   return(matches)
@@ -57,6 +59,8 @@ map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction =
 #'
 #' @return A dataframe with the bidirectionally mapped codes.
 #'
+#' @importFrom rlang .data
+#'
 #' @keywords Internal
 forward_backward <- function(codes, icdVer_dest, code_type) {
   map_stage(codes, icdVer_dest, code_type, "forward") |>
@@ -64,7 +68,7 @@ forward_backward <- function(codes, icdVer_dest, code_type) {
       map_stage(codes, icdVer_dest, code_type, "backward")
     ) |>
     dplyr::distinct() |>
-    dplyr::filter(!is.na(dest_code))
+    dplyr::filter(!is.na(.data$dest_code))
 }
 
 #' Map Code
@@ -81,6 +85,8 @@ forward_backward <- function(codes, icdVer_dest, code_type) {
 #' }
 #'
 #' @return A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
+#'
+#' @importFrom rlang .data
 #'
 #' @export
 map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("gem", "reverse-gem", "both", "multi-stage")){
@@ -100,39 +106,39 @@ map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("
     stage1 <- forward_backward(codes, icdVer_dest, code_type)
     stage1_codes <- stage1 |>
       dplyr::distinct() |>
-      dplyr::pull(dest_code)
+      dplyr::pull(.data$dest_code)
     stage2 <- forward_backward(stage1_codes, srcICDVer, code_type)
     stage2_codes <- stage2 |>
       dplyr::distinct() |>
-      dplyr::pull(dest_code)
+      dplyr::pull(.data$dest_code)
     stage3 <- forward_backward(stage2_codes, icdVer_dest, code_type)
 
     # Clean up results
     matches <- stage1 |>
-      dplyr::select(src_code, dest_code) |>
+      dplyr::select(.data$src_code, .data$dest_code) |>
       dplyr::inner_join(
         stage2 |>
-          dplyr::select(src_code, dest_code) |>
-          dplyr::filter(!is.na(dest_code)),
+          dplyr::select(.data$src_code, .data$dest_code) |>
+          dplyr::filter(!is.na(.data$dest_code)),
         by = c("dest_code" = "src_code"),
         relationship = "many-to-many"
       ) |>
       dplyr::inner_join(
         stage3 |>
-          dplyr::select(src_code, dest_code) |>
-          dplyr::filter(!is.na(dest_code)),
+          dplyr::select(.data$src_code, .data$dest_code) |>
+          dplyr::filter(!is.na(.data$dest_code)),
         by = c("dest_code.y" = "src_code"),
         relationship = "many-to-many"
       )
 
     matches <- matches |>
-      dplyr::select(src_code, dest_code.y.y) |>
+      dplyr::select(.data$src_code, .data$dest_code.y.y) |>
       dplyr::rename(
         "dest_code" = "dest_code.y.y"
       ) |>
-      dplyr::filter(!is.na(dest_code)) |>
+      dplyr::filter(!is.na(.data$dest_code)) |>
       dplyr::distinct() |>
-      dplyr::arrange(src_code, dest_code)
+      dplyr::arrange(.data$src_code, .data$dest_code)
   }
 
   return(matches)
@@ -148,6 +154,8 @@ map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("
 #'
 #' @return A dataframe with the ICD code and its description.
 #'
+#' @importFrom rlang .data
+#'
 #' @export
 get_description <- function(codes, icdVer, code_type){
   # Load description file
@@ -158,7 +166,8 @@ get_description <- function(codes, icdVer, code_type){
 
   # Subset description file based on list of codes
   # codes <- as.character(codes)
-  matches <- subset(descriptions, code %in% codes)
+  matches <- descriptions |>
+    dplyr::filter(.data$code %in% codes)
 
   # Join descriptions with the codes
   result <- as.data.frame(codes) |>
@@ -182,6 +191,8 @@ get_description <- function(codes, icdVer, code_type){
 #' @param keepMapCode Boolean - if true, returned data frame will keep the map code and associated columns, otherwise they are dropped.
 #'
 #' @return A dataframe with the original ICD code, the matching code, descriptions for both, and potentially columns for the map codes.
+#'
+#' @importFrom rlang .data
 #'
 #' @export
 map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("gem", "reverse-gem", "both", "multi-stage"), keepMapCode = FALSE) {
@@ -208,13 +219,13 @@ map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method =
       dest_desc,
       by = c("dest_code" = "codes")
     ) |>
-    dplyr::arrange(ord) |>
+    dplyr::arrange(.data$ord) |>
     (
       \(.){
         if(keepMapCode) {
-          dplyr::select(., src_code, src_desc, dest_code, dest_desc, map_code, approximate, no_map, combination, scenario, choice_lists)
+          dplyr::select(., .data$src_code, .data$src_desc, .data$dest_code, .data$dest_desc, .data$map_code, .data$approximate, .data$no_map, .data$combination, .data$scenario, .data$choice_lists)
         } else {
-          dplyr::select(., src_code, src_desc, dest_code, dest_desc)
+          dplyr::select(., .data$src_code, .data$src_desc, .data$dest_code, .data$dest_desc)
         }
       }
     )()
