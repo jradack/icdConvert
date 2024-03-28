@@ -86,3 +86,9 @@ test_that("map_describe: check that keepMapCode works properly",{
 )
 })
 
+test_that("map_describe: multi-stage works when there are no matches",{
+  m1 <- map_describe(c("1234567", "098765"), icdVer_dest = 10, code_type = "dg", method = "multi-stage")
+  e1 <- data.frame(src_code = character(), src_desc = character(), dest_code = character(), dest_desc = character())
+  expect_equal(m1, e1)
+})
+

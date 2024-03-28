@@ -203,11 +203,15 @@ map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method =
 
   # Map codes and get descriptions
   mapped <- map_code(codes, icdVer_dest, code_type, method)
-  mapped$ord <- 1:nrow(mapped)
   src_desc <- get_description(mapped$src_code, srcICDVer, code_type)
   colnames(src_desc)[2] <- "src_desc"
   dest_desc <- get_description(mapped$dest_code, icdVer_dest, code_type)
   colnames(dest_desc)[2] <- "dest_desc"
+
+  # Create column for ordering the rows
+  if(nrow(mapped) > 0) {
+    mapped$ord <- 1:nrow(mapped)
+  }
 
   # Join mapped codes with descriptions, filter columns based on keepMapCode option
   result <- mapped |>
@@ -218,8 +222,15 @@ map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method =
     dplyr::left_join(
       dest_desc,
       by = c("dest_code" = "codes")
-    ) |>
-    dplyr::arrange(.data$ord) |>
+    ) |> (
+      \(.)
+      if(nrow(mapped) > 0) {
+        dplyr::arrange(., .data$ord)
+      }
+      else {
+        .
+      }
+    )() |>
     (
       \(.){
         if(keepMapCode) {
