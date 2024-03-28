@@ -115,24 +115,24 @@ map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("
 
     # Clean up results
     matches <- stage1 |>
-      dplyr::select(.data$src_code, .data$dest_code) |>
+      dplyr::select("src_code", "dest_code") |>
       dplyr::inner_join(
         stage2 |>
-          dplyr::select(.data$src_code, .data$dest_code) |>
+          dplyr::select("src_code", "dest_code") |>
           dplyr::filter(!is.na(.data$dest_code)),
         by = c("dest_code" = "src_code"),
         relationship = "many-to-many"
       ) |>
       dplyr::inner_join(
         stage3 |>
-          dplyr::select(.data$src_code, .data$dest_code) |>
+          dplyr::select("src_code", "dest_code") |>
           dplyr::filter(!is.na(.data$dest_code)),
         by = c("dest_code.y" = "src_code"),
         relationship = "many-to-many"
       )
 
     matches <- matches |>
-      dplyr::select(.data$src_code, .data$dest_code.y.y) |>
+      dplyr::select("src_code", "dest_code.y.y") |>
       dplyr::rename(
         "dest_code" = "dest_code.y.y"
       ) |>
@@ -234,9 +234,9 @@ map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method =
     (
       \(.){
         if(keepMapCode) {
-          dplyr::select(., .data$src_code, .data$src_desc, .data$dest_code, .data$dest_desc, .data$map_code, .data$approximate, .data$no_map, .data$combination, .data$scenario, .data$choice_lists)
+          dplyr::select(., "src_code", "src_desc", "dest_code", "dest_desc", "map_code", "approximate", "no_map", "combination", "scenario", "choice_lists")
         } else {
-          dplyr::select(., .data$src_code, .data$src_desc, .data$dest_code, .data$dest_desc)
+          dplyr::select(., "src_code", "src_desc", "dest_code", "dest_desc")
         }
       }
     )()
