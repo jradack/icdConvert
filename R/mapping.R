@@ -9,14 +9,10 @@
 #'
 #' @keywords Internal
 match_prefixes <- function(strings, prefixes) {
-  sapply(
+  purrr::map_lgl(
     strings,
-    \(s) sapply(
-        prefixes,
-        \(prefix) startsWith(s, prefix)
-      ) |>
-      any(),
-    USE.NAMES = FALSE
+    \(s) startsWith(s, prefixes) |>
+      any()
   )
 }
 
