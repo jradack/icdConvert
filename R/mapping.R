@@ -1,3 +1,51 @@
+#' Match Prefixes
+#'
+#' Checks whether a string matches any of a vector of prefixes.
+#'
+#' @param strings A vector of character string to test
+#' @param prefixes A vector of character strings representing the prefixes
+#'
+#' @returns A boolean indicating whether the string matches any of the prefixes.
+#'
+#' @keywords Internal
+match_prefixes <- function(strings, prefixes) {
+  sapply(
+    strings,
+    \(s) sapply(
+        prefixes,
+        \(prefix) startsWith(s, prefix)
+      ) |>
+      any(),
+    USE.NAMES = FALSE
+  )
+}
+
+#' Exact or partial match
+#'
+#' Wrapper for whether to search for an exact match or a partial match
+#' of a code in a vector of codes.
+#'
+#' @param codes Vector of character string of code to search for
+#' @param code_vec Vector of character strings to compare against
+#' @param exact_match Boolean for whether an exact or prefix match should be used.
+#'
+#' @returns Boolean for whether a match was found.
+#'
+#' @keywords Internal
+match_code <- function(codes, code_vec, match_method = c("exact", "prefix")) {
+  match_method = match.arg(match_method)
+
+  switch(
+    match_method,
+    exact = {
+      codes %in% code_vec
+    },
+    prefix = {
+      match_prefixes(codes, code_vec)
+    }
+  )
+}
+
 #' Map Stage
 #'
 #' Performs a single stage of ICD code mapping, either the forward map or the

@@ -4,6 +4,51 @@ dg_test_codes2 <- c("64601","65131","65133","65141","65161","65571",
                 "65643","66320","66331","66501")
 pc_test_codes1 <- c("1421", "1422")
 
+#------------------------
+# Testing match_prefixes
+#------------------------
+test_that("match_prefixes: No matching prefixes", {
+  expect_equal(match_prefixes("124", dg_test_codes3), FALSE)
+})
+
+test_that("match_prefixes: Does not fully match any prefix", {
+  expect_equal(match_prefixes("764", dg_test_codes3), FALSE)
+})
+
+test_that("match_prefixes: Exactly matches a prefix", {
+  expect_equal(match_prefixes("7642", dg_test_codes3), TRUE)
+})
+
+test_that("match_prefixes: Matches a prefix with extra characters", {
+  expect_equal(match_prefixes("76410", dg_test_codes3), TRUE)
+})
+
+test_that("match_prefixes: Match multiple strings", {
+  expect_equal(
+    match_prefixes(c("124", "764", "7642", "76410"), dg_test_codes3),
+    c(FALSE, FALSE, TRUE, TRUE)
+  )
+})
+
+#--------------------
+# Testing match_code
+#--------------------
+test_that("match_code: No match existing using exact matching", {
+  expect_equal(match_code("76410", dg_test_codes3, "exact"), FALSE)
+})
+
+test_that("match_code: Match existing using exact matching", {
+  expect_equal(match_code("7641", dg_test_codes3, "exact"), TRUE)
+})
+
+test_that("match_code: No match existing using prefix matching", {
+  expect_equal(match_code("123", dg_test_codes3, "prefix"), FALSE)
+})
+
+test_that("match_code: Match existing using prefix matching", {
+  expect_equal(match_code("76410", dg_test_codes3, "prefix"), TRUE)
+})
+
 #--------------------
 # Testing map_stage
 #--------------------
