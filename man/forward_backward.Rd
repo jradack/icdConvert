@@ -4,7 +4,12 @@
 \alias{forward_backward}
 \title{Forward-Backward Mapping}
 \usage{
-forward_backward(codes, icdVer_dest, code_type)
+forward_backward(
+  codes,
+  icdVer_dest,
+  code_type,
+  match_method = c("exact", "prefix")
+)
 }
 \arguments{
 \item{codes}{A vector of ICD diagnosis or procedure codes.}
@@ -12,6 +17,11 @@ forward_backward(codes, icdVer_dest, code_type)
 \item{icdVer_dest}{A number, either 9 or 10, indicating the destination ICD version.}
 
 \item{code_type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
+
+\item{match_method}{A string, specifying the method for matching the codes \itemize{
+\item \code{"exact"} matches the provided code exactly.
+\item \code{"prefix"} treats the provided code as a prefix for matching.
+}}
 }
 \value{
 A dataframe with the bidirectionally mapped codes.

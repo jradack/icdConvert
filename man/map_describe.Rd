@@ -9,6 +9,7 @@ map_describe(
   icdVer_dest,
   code_type = c("dg", "pc"),
   method = c("gem", "reverse-gem", "both", "multi-stage"),
+  match_method = c("exact", "prefix"),
   keepMapCode = FALSE
 )
 }
@@ -20,6 +21,11 @@ map_describe(
 \item{code_type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
 
 \item{method}{A string, either "gem", "reverse-gem", "both", or "multi-stage". See documentation on \code{map_code} for more details.}
+
+\item{match_method}{A string, specifying the method for matching the codes \itemize{
+\item \code{"exact"} matches the provided code exactly.
+\item \code{"prefix"} treats the provided code as a prefix for matching.
+}}
 
 \item{keepMapCode}{Boolean - if true, returned data frame will keep the map code and associated columns, otherwise they are dropped.}
 }

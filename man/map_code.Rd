@@ -8,7 +8,8 @@ map_code(
   codes,
   icdVer_dest,
   code_type = c("dg", "pc"),
-  method = c("gem", "reverse-gem", "both", "multi-stage")
+  method = c("gem", "reverse-gem", "both", "multi-stage"),
+  match_method = c("exact", "prefix")
 )
 }
 \arguments{
@@ -18,11 +19,16 @@ map_code(
 
 \item{code_type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
 
-\item{method}{A string specifying the method for mapping the codes. The same methods as implemented by the \code{icd_convert} function in the touch \code{package}. \itemize{
+\item{method}{A string specifying the method for mapping the codes. The same methods as implemented by the \code{icd_convert} function in the \code{touch} package. \itemize{
 \item \code{"gem"} performs a single forward mapping.
 \item \code{"reverse-gem"} performs a single backward mapping.
-\item \code{"both"} perfroms a single forward and backward mapping, combining the results.
+\item \code{"both"} performs a single forward and backward mapping, combining the results.
 \item \code{"multi-stage"} performs the multiple-stage mapping, as described in the \code{touch} package.
+}}
+
+\item{match_method}{A string, specifying the method for matching the codes \itemize{
+\item \code{"exact"} matches the provided code exactly.
+\item \code{"prefix"} treats the provided code as a prefix for matching.
 }}
 }
 \value{

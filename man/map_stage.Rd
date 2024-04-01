@@ -8,7 +8,8 @@ map_stage(
   codes,
   icdVer_dest,
   code_type = c("dg", "pc"),
-  direction = c("forward", "backward")
+  direction = c("forward", "backward"),
+  match_method = c("exact", "prefix")
 )
 }
 \arguments{
@@ -19,6 +20,11 @@ map_stage(
 \item{code_type}{A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.}
 
 \item{direction}{A string, either "forward" or "backward", to indicate the direction of the mapping.}
+
+\item{match_method}{A string, specifying the method for matching the codes \itemize{
+\item \code{"exact"} matches the provided code exactly.
+\item \code{"prefix"} treats the provided code as a prefix for matching.
+}}
 }
 \value{
 A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
