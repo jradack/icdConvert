@@ -1,6 +1,6 @@
 Package: icdConvert
 Title: Convert ICD Codes
-Version: 1.1.1
+Version: 1.2.0
 Authors@R: 
     person("Joshua", "Radack", , "radackj@chop.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
