@@ -23,7 +23,10 @@ match_prefixes <- function(strings, prefixes) {
 #'
 #' @param codes Vector of character string of code to search for
 #' @param code_vec Vector of character strings to compare against
-#' @param exact_match Boolean for whether an exact or prefix match should be used.
+#' @param match_method A string, specifying the method for matching the codes \itemize{
+#'     \item \code{"exact"} matches the provided code exactly.
+#'     \item \code{"prefix"} treats the provided code as a prefix for matching.
+#' }
 #'
 #' @returns Boolean for whether a match was found.
 #'
@@ -53,45 +56,75 @@ match_code <- function(codes, code_vec, match_method = c("exact", "prefix")) {
 #' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
 #' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
 #' @param direction A string, either "forward" or "backward", to indicate the direction of the mapping.
+#' @param match_method A string, specifying the method for matching the codes \itemize{
+#'     \item \code{"exact"} matches the provided code exactly.
+#'     \item \code{"prefix"} treats the provided code as a prefix for matching.
+#' }
 #'
 #' @return A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
 #'
 #' @importFrom rlang .data
 #'
 #' @export
-map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction = c("forward", "backward")){
+map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction = c("forward", "backward"), match_method = c("exact", "prefix")){
   code_type <- match.arg(code_type)
   direction <- match.arg(direction)
+  match_method <- match.arg(match_method)
 
   if(direction == "forward"){
     # Load appropriate GEM file
     gem <- switch(paste0(icdVer_dest, code_type), "9dg" = dg_10_9_gem, "10dg" = dg_9_10_gem, "9pc" = pc_10_9_gem, "10pc" = pc_9_10_gem)
     # Subset GEM file based on codes
-    matches <- dplyr::filter(gem, .data$src %in% codes)
+    matches <- dplyr::filter(gem, match_code(.data$src, codes, match_method))
   } else if(direction == "backward"){
     # Load appropriate GEM file
     gem <- switch(paste0(icdVer_dest, code_type), "9dg" = dg_9_10_gem, "10dg" = dg_10_9_gem, "9pc" = pc_9_10_gem, "10pc" = pc_10_9_gem)
     # Subset GEM file based on codes
-    matches <- dplyr::filter(gem, .data$dest %in% codes) |>
+    matches <- dplyr::filter(gem, match_code(.data$dest, codes, match_method)) |>
       dplyr::select('dest', 'src', 3:8)
   }
 
+  # Setup dataframes
   colnames(matches)[1:2] <- c('src_code', 'dest_code')
+  origin_codes <- data.frame(origin_code = codes)
 
-  # Clean up for cases where no matching code was found
-  matches <- data.frame(src_code = codes) |>
-    dplyr::left_join(
-      matches,
-      by = "src_code"
-    )
+  if(nrow(matches) == 0) {
+    # If there are no matches at all, fill in NA
+    origin_codes[, c("src_code", "dest_code", "map_code")] <- NA
+    matches_joined <- origin_codes
+  } else {
+    # Join the original codes to the matched codes, using the specified match method
+    matches_joined <- origin_codes |>
+      dplyr::cross_join(
+        matches |>
+          dplyr::select("src_code", "dest_code")
+      ) |>
+      dplyr::rowwise() |>
+      dplyr::filter(
+        match_code(.data$src_code, .data$origin_code, match_method = match_method)
+      ) |>
+      dplyr::ungroup() |>
+      dplyr::right_join(
+        origin_codes,
+        by = "origin_code"
+      ) |>
+      dplyr::left_join(
+        matches,
+        by = c("src_code", "dest_code")
+      ) |>
+      dplyr::select(
+        "origin_code", "src_code", "dest_code", "map_code"
+      )
+  }
 
-  # Handling cases of a one to many map of the source code
-  matches <- matches |>
+  # Order the rows
+  matches_joined <- matches_joined |>
     dplyr::arrange(
-      .data$src_code, .data$combination, .data$scenario, .data$choice_lists
-    )
+      .data$origin_code, .data$src_code, .data$dest_code
+    ) |>
+    as.data.frame()
 
-  return(matches)
+  return(matches_joined)
 }
 
 #' Forward-Backward Mapping
@@ -100,19 +133,27 @@ map_stage <- function(codes, icdVer_dest, code_type = c("dg", "pc"), direction =
 #' @param codes A vector of ICD diagnosis or procedure codes.
 #' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
 #' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
+#' @param match_method A string, specifying the method for matching the codes \itemize{
+#'     \item \code{"exact"} matches the provided code exactly.
+#'     \item \code{"prefix"} treats the provided code as a prefix for matching.
+#' }
 #'
 #' @return A dataframe with the bidirectionally mapped codes.
 #'
 #' @importFrom rlang .data
 #'
 #' @keywords Internal
-forward_backward <- function(codes, icdVer_dest, code_type) {
-  map_stage(codes, icdVer_dest, code_type, "forward") |>
+forward_backward <- function(codes, icdVer_dest, code_type, match_method = c("exact", "prefix")) {
+  map_stage(codes, icdVer_dest, code_type, "forward", match_method) |>
     dplyr::bind_rows(
-      map_stage(codes, icdVer_dest, code_type, "backward")
+      map_stage(codes, icdVer_dest, code_type, "backward", match_method)
     ) |>
     dplyr::distinct() |>
-    dplyr::filter(!is.na(.data$dest_code))
+    dplyr::group_by(.data$origin_code) |>
+    dplyr::filter(!is.na(.data$dest_code) | dplyr::n() == 1) |>
+    dplyr::ungroup() |>
+    dplyr::arrange(.data$origin_code, .data$src_code, .data$dest_code) |>
+    as.data.frame()
 }
 
 #' Map Code
@@ -121,11 +162,15 @@ forward_backward <- function(codes, icdVer_dest, code_type) {
 #' @param codes A vector of ICD diagnosis or procedure codes.
 #' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
 #' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
-#' @param method A string specifying the method for mapping the codes. The same methods as implemented by the \code{icd_convert} function in the touch \code{package}. \itemize{
+#' @param method A string specifying the method for mapping the codes. The same methods as implemented by the \code{icd_convert} function in the \code{touch} package. \itemize{
 #'     \item \code{"gem"} performs a single forward mapping.
 #'     \item \code{"reverse-gem"} performs a single backward mapping.
-#'     \item \code{"both"} perfroms a single forward and backward mapping, combining the results.
+#'     \item \code{"both"} performs a single forward and backward mapping, combining the results.
 #'     \item \code{"multi-stage"} performs the multiple-stage mapping, as described in the \code{touch} package.
+#' }
+#' @param match_method A string, specifying the method for matching the codes \itemize{
+#'     \item \code{"exact"} matches the provided code exactly.
+#'     \item \code{"prefix"} treats the provided code as a prefix for matching.
 #' }
 #'
 #' @return A dataframe with the source code, the matching destination code, and additional columns for cases where multiple codes represent a single source code.
@@ -133,56 +178,62 @@ forward_backward <- function(codes, icdVer_dest, code_type) {
 #' @importFrom rlang .data
 #'
 #' @export
-map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("gem", "reverse-gem", "both", "multi-stage")){
+map_code <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("gem", "reverse-gem", "both", "multi-stage"), match_method = c("exact", "prefix")){
   code_type <- match.arg(code_type)
   method <- match.arg(method)
+  match_method = match.arg(match_method)
 
   if(method == "gem"){
-    matches <- map_stage(codes, icdVer_dest, code_type, "forward")
+    matches <- map_stage(codes, icdVer_dest, code_type, "forward", match_method)
   }else if(method == "reverse-gem"){
-    matches <- map_stage(codes, icdVer_dest, code_type, "backward")
+    matches <- map_stage(codes, icdVer_dest, code_type, "backward", match_method)
   }else if(method == "both"){
-    matches <- forward_backward(codes, icdVer_dest, code_type)
+    matches <- forward_backward(codes, icdVer_dest, code_type, match_method)
   }else if(method == "multi-stage"){
     srcICDVer <- ifelse(icdVer_dest == 9, 10, 9)
 
     # Perform multi-stage matching
-    stage1 <- forward_backward(codes, icdVer_dest, code_type)
+    stage1 <- forward_backward(codes, icdVer_dest, code_type, match_method) |>
+      dplyr::rename_with(\(x) paste0(x, "_stage1"))
     stage1_codes <- stage1 |>
       dplyr::distinct() |>
-      dplyr::pull(.data$dest_code)
-    stage2 <- forward_backward(stage1_codes, srcICDVer, code_type)
+      dplyr::pull(.data$dest_code_stage1)
+    stage2 <- forward_backward(stage1_codes, srcICDVer, code_type, "exact") |>
+      dplyr::rename_with(\(x) paste0(x, "_stage2"))
     stage2_codes <- stage2 |>
       dplyr::distinct() |>
-      dplyr::pull(.data$dest_code)
-    stage3 <- forward_backward(stage2_codes, icdVer_dest, code_type)
+      dplyr::pull(.data$dest_code_stage2)
+    stage3 <- forward_backward(stage2_codes, icdVer_dest, code_type, "exact") |>
+      dplyr::rename_with(\(x) paste0(x, "_stage3"))
 
     # Clean up results
     matches <- stage1 |>
-      dplyr::select("src_code", "dest_code") |>
+      # dplyr::select("src_code", "dest_code") |>
       dplyr::inner_join(
-        stage2 |>
-          dplyr::select("src_code", "dest_code") |>
-          dplyr::filter(!is.na(.data$dest_code)),
-        by = c("dest_code" = "src_code"),
+        stage2, #|>
+          # dplyr::select("src_code", "dest_code") |>
+          # dplyr::filter(!is.na(.data$dest_code_stage2)),
+        by = c("dest_code_stage1" = "src_code_stage2"),
         relationship = "many-to-many"
       ) |>
       dplyr::inner_join(
-        stage3 |>
-          dplyr::select("src_code", "dest_code") |>
-          dplyr::filter(!is.na(.data$dest_code)),
-        by = c("dest_code.y" = "src_code"),
+        stage3, #|>
+          # dplyr::select("src_code", "dest_code") |>
+          # dplyr::filter(!is.na(.data$dest_code_stage3)),
+        by = c("dest_code_stage2" = "src_code_stage3"),
         relationship = "many-to-many"
       )
 
     matches <- matches |>
-      dplyr::select("src_code", "dest_code.y.y") |>
-      dplyr::rename(
-        "dest_code" = "dest_code.y.y"
+      dplyr::select(
+        "origin_code" = "origin_code_stage1",
+        "src_code" = "src_code_stage1",
+        "dest_code" = "dest_code_stage3",
+        "map_code" = "map_code_stage3"
       ) |>
-      dplyr::filter(!is.na(.data$dest_code)) |>
+      # dplyr::filter(!is.na(.data$dest_code)) |>
       dplyr::distinct() |>
-      dplyr::arrange(.data$src_code, .data$dest_code)
+      dplyr::arrange(.data$origin_code, .data$src_code, .data$dest_code)
   }
 
   return(matches)
@@ -219,9 +270,10 @@ get_description <- function(codes, icdVer, code_type){
       matches,
       by = c("codes" = "code")
     ) |>
-    dplyr::distinct()
-  return(result)
+    dplyr::distinct() |>
+    dplyr::arrange(.data$codes)
 
+  return(result)
 }
 
 
@@ -232,6 +284,10 @@ get_description <- function(codes, icdVer, code_type){
 #' @param icdVer_dest A number, either 9 or 10, indicating the destination ICD version.
 #' @param code_type A string, either "dg" or "pc," indicating the codes are diagnosis or procedure, respectively.
 #' @param method A string, either "gem", "reverse-gem", "both", or "multi-stage". See documentation on \code{map_code} for more details.
+#' @param match_method A string, specifying the method for matching the codes \itemize{
+#'     \item \code{"exact"} matches the provided code exactly.
+#'     \item \code{"prefix"} treats the provided code as a prefix for matching.
+#' }
 #' @param keepMapCode Boolean - if true, returned data frame will keep the map code and associated columns, otherwise they are dropped.
 #'
 #' @return A dataframe with the original ICD code, the matching code, descriptions for both, and potentially columns for the map codes.
@@ -239,14 +295,14 @@ get_description <- function(codes, icdVer, code_type){
 #' @importFrom rlang .data
 #'
 #' @export
-map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("gem", "reverse-gem", "both", "multi-stage"), keepMapCode = FALSE) {
+map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method = c("gem", "reverse-gem", "both", "multi-stage"), match_method = c("exact", "prefix"), keepMapCode = FALSE) {
   code_type <- match.arg(code_type)
   method <- match.arg(method)
 
   srcICDVer <- ifelse(icdVer_dest == 9, 10, 9)
 
   # Map codes and get descriptions
-  mapped <- map_code(codes, icdVer_dest, code_type, method)
+  mapped <- map_code(codes, icdVer_dest, code_type, method, match_method)
   src_desc <- get_description(mapped$src_code, srcICDVer, code_type)
   colnames(src_desc)[2] <- "src_desc"
   dest_desc <- get_description(mapped$dest_code, icdVer_dest, code_type)
@@ -278,9 +334,9 @@ map_describe <- function(codes, icdVer_dest, code_type = c("dg", "pc"), method =
     (
       \(.){
         if(keepMapCode) {
-          dplyr::select(., "src_code", "src_desc", "dest_code", "dest_desc", "map_code", "approximate", "no_map", "combination", "scenario", "choice_lists")
+          dplyr::select(., "origin_code", "src_code", "src_desc", "dest_code", "dest_desc", "map_code")
         } else {
-          dplyr::select(., "src_code", "src_desc", "dest_code", "dest_desc")
+          dplyr::select(., "origin_code", "src_code", "src_desc", "dest_code", "dest_desc")
         }
       }
     )()
