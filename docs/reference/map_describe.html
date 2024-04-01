@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">icdConvert</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,7 @@
 <span>  <span class="va">icdVer_dest</span>,</span>
 <span>  code_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dg"</span>, <span class="st">"pc"</span><span class="op">)</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gem"</span>, <span class="st">"reverse-gem"</span>, <span class="st">"both"</span>, <span class="st">"multi-stage"</span><span class="op">)</span>,</span>
+<span>  match_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exact"</span>, <span class="st">"prefix"</span><span class="op">)</span>,</span>
 <span>  keepMapCode <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -70,6 +71,12 @@
 
 <dt>method</dt>
 <dd><p>A string, either "gem", "reverse-gem", "both", or "multi-stage". See documentation on <code>map_code</code> for more details.</p></dd>
+
+
+<dt>match_method</dt>
+<dd><p>A string, specifying the method for matching the codes</p><ul><li><p><code>"exact"</code> matches the provided code exactly.</p></li>
+<li><p><code>"prefix"</code> treats the provided code as a prefix for matching.</p></li>
+</ul></dd>
 
 
 <dt>keepMapCode</dt>
