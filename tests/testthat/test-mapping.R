@@ -52,6 +52,79 @@ test_that("match_code: Match existing using prefix matching", {
   expect_equal(match_code("76410", dg_test_codes3, "prefix"), TRUE)
 })
 
+#----------------------------
+# Testing identify_code_type
+#----------------------------
+test_that("identify_code_type: single code that has match", {
+  a <- identify_code_type("4321")
+  expect_equal(
+    a,
+    data.frame(
+      codes = "4321",
+      icdVer = 9,
+      code_type = "dg",
+      desc = "Subdural hemorrhage"
+    ),
+    ignore_attr = TRUE
+  )
+})
+
+test_that("identify_code_type: single code that doesn't match", {
+  a <- identify_code_type("124124")
+  expect_equal(
+    a,
+    data.frame(
+      codes = "124124",
+      icdVer = NA |> as.numeric(),
+      code_type = NA |> as.character(),
+      desc = NA |> as.character()
+    ),
+    ignore_attr = TRUE
+  )
+})
+
+test_that("identify_code_type: multiple codes that match", {
+  a <- identify_code_type(c("4321", "4444"))
+  expect_equal(
+    a,
+    data.frame(
+      codes = c("4321", "4444"),
+      icdVer = c(9, 9),
+      code_type = c("dg", "pc"),
+      desc = c("Subdural hemorrhage", "Transcatheter embolization for gastric or duodenal bleeding")
+    ),
+    ignore_attr = TRUE
+  )
+})
+
+test_that("identify_code_type: some codes match", {
+  a <- identify_code_type(c("4321", "124124"))
+  expect_equal(
+    a,
+    data.frame(
+      codes = c("4321", "124124"),
+      icdVer = c(9, NA),
+      code_type = c("dg", NA),
+      desc = c("Subdural hemorrhage", NA)
+    ),
+    ignore_attr = TRUE
+  )
+})
+
+test_that("identify_code_type: multiple codes that don't match", {
+  a <- identify_code_type(c("124124", "421421"))
+  expect_equal(
+    a,
+    data.frame(
+      codes = c("124124", "421421"),
+      icdVer = NA |> as.numeric(),
+      code_type = NA |> as.character(),
+      desc = NA |> as.character()
+    ),
+    ignore_attr = TRUE
+  )
+})
+
 #--------------------
 # Testing map_stage
 #--------------------
