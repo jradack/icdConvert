@@ -45,6 +45,46 @@ match_code <- function(codes, code_vec, match_method = c("exact", "prefix")) {
   )
 }
 
+#' Determine code type and version
+#'
+#' For codes of unknown origin, this function tries to find a match in the description
+#' file. Returns multiple matches if found, if no match is found returns a row with
+#' the code and NAs.
+#' @param code A vector of strings of the ICD codes
+#' @returns A dataframe with the original ICD code, the ICD version, the code type and description.
+identify_code_type <- function(code) {
+  # Create all combinations of codes, version, and code type
+  code_grid <- expand.grid(
+    codes = code,
+    icdVer = 9:10,
+    code_type = c("dg", "pc"),
+    stringsAsFactors = FALSE
+  )
+
+  # Get the description for every combination
+  descriptions <- purrr::pmap(code_grid, get_description) |>
+    purrr::list_rbind() |>
+    dplyr::select(desc)
+
+  # Filter out combinations without match, or keep single row of missing if no match
+  code_grid |>
+    dplyr::bind_cols(
+      descriptions
+    ) |>
+    dplyr::group_by(codes) |>
+    dplyr::mutate(
+      count = sum(!is.na(desc))
+    ) |>
+    dplyr::filter((count > 0 & !is.na(desc)) | (count == 0 & dplyr::row_number() == 1)) |>
+    dplyr::mutate(
+      dplyr::across(
+        c(icdVer, code_type),
+        ~ dplyr::if_else(is.na(desc), NA, .x)
+      )
+    ) |>
+    dplyr::select(-count)
+}
+
 #' Map Stage
 #'
 #' Performs a single stage of ICD code mapping, either the forward map or the
